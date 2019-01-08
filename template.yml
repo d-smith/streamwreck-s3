@@ -24,9 +24,33 @@ Resources:
             Stream: !GetAtt AppStream.Arn
             StartingPosition: LATEST
             BatchSize: 50
+      Environment:
+        Variables:
+          TOPIC: !Ref ProcessedTopic
+      Policies:
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt ProcessedTopic.TopicName
+
+  Notified:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Join [ -, [Notified, !Ref "Env"]]
+      Handler: bin/notified
+      Events:
+        SNSEvent:
+          Type: SNS
+          Properties:
+            Topic: !Ref ProcessedTopic
+
 
   AppStream:
     Type: AWS::Kinesis::Stream
     Properties:
       Name: !Join [ -, [WreakStreamS3, !Ref "Env"]]
       ShardCount: 1
+
+  ProcessedTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: !Join [ -, [WreakStreamTopic, !Ref "Env"]]
+      TopicName: !Join [ -, [WreakStreamTopic, !Ref "Env"]]
